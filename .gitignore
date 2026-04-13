@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.env
+
+# Large data and model files (Physical-Informed energy prediction)
+features/*.csv
+processed/*.csv
+results/**/*.csv
+models/*.pkl
+models/*.h5
+models/*.pt
+residual_data.csv
+
+# Visualizations
+plots/
+
+# IDE
+.idea/
+.vscode/
+.DS_Store
