@@ -31,6 +31,22 @@ plt.rcParams["font.sans-serif"] = ["Microsoft YaHei", "SimHei", "Arial Unicode M
 plt.rcParams["axes.unicode_minus"] = False
 
 
+def _configure_windows_utf8_console() -> None:
+    """
+    Windows 下默认代码页可能导致中文打印乱码；尽量将 stdout/stderr 切到 UTF-8。
+    不改变文件读写编码（文件读写已在各处显式指定 encoding）。
+    """
+    if sys.platform != "win32":
+        return
+    for stream in (sys.stdout, sys.stderr):
+        reconfig = getattr(stream, "reconfigure", None)
+        if callable(reconfig):
+            try:
+                reconfig(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+
+
 def _load_phaseb_rebuild():
     name = "phaseb_rebuild_dayahead_only"
     spec = importlib.util.spec_from_file_location(name, PHASEB_SCRIPT)
@@ -525,53 +541,8 @@ def build_report(
     (out_dir / "analysis_report.md").write_text(report, encoding="utf-8")
 
 
-def write_readme() -> None:
-    text = """# Phase B 仅日前
-
-主脚本：`run_phaseB_dayahead_only.py`  
-输出：无过滤时写入 `outputs/`；使用 `--min-merged-obs-per-bs` 或 `--exclude-bs-csv` 时写入 `outputs_filter/`，与全量结果并存。
-
-示例（剔除稀疏 QC 中少于 24 观测的站，结果在 `outputs_filter/`）：
-```bash
-python phaseB_dayahead_only_20260415/run_phaseB_dayahead_only.py \\
-  --min-merged-obs-per-bs 24 \\
-  --exclude-bs-csv phase_sparse_observed_20260415/outputs/bs_below_hour_threshold.csv
-```
-
-## 代理权重学习（stacking）
-
-学习并应用多源代理权重（满足 `w>=0` 且 `sum(w)=1`），用于替换 two-stage proxy 的固定权重：
-
-```bash
-python phaseB_dayahead_only_20260415/run_phaseB_dayahead_only.py \\
-  --min-merged-obs-per-bs 24 \\
-  --exclude-bs-csv phase_sparse_observed_20260415/outputs/bs_below_hour_threshold.csv \\
-  --learn-proxy-weights
-```
-
-复用既有权重：
-
-```bash
-python phaseB_dayahead_only_20260415/run_phaseB_dayahead_only.py \\
-  --min-merged-obs-per-bs 24 \\
-  --exclude-bs-csv phase_sparse_observed_20260415/outputs/bs_below_hour_threshold.csv \\
-  --proxy-weights-json phaseB_dayahead_only_20260415/outputs_filter/proxy_weights.json
-```
-
-为避免覆盖输出，可指定输出子目录（相对 `phaseB_dayahead_only_20260415/`）：
-
-```bash
-python phaseB_dayahead_only_20260415/run_phaseB_dayahead_only.py \\
-  --min-merged-obs-per-bs 24 \\
-  --exclude-bs-csv phase_sparse_observed_20260415/outputs/bs_below_hour_threshold.csv \\
-  --learn-proxy-weights \\
-  --output-subdir outputs_filter_learned
-```
-"""
-    (BASE_DIR / "README.md").write_text(text, encoding="utf-8")
-
-
 def main() -> None:
+    _configure_windows_utf8_console()
     parser = argparse.ArgumentParser(description="Phase B 仅日前 + 可选 BS 过滤")
     parser.add_argument(
         "--min-merged-obs-per-bs",
@@ -657,7 +628,6 @@ def main() -> None:
     plot_prediction_vs_actual_dayahead_only(dayahead_predictions, strict_metrics, out_dir)
     plot_error_by_horizon_dayahead(dayahead_horizon_metrics, out_dir)
     build_report(pbase_meta, strict_metrics, dayahead_horizon_metrics, physics_checks, es_effects, filter_meta, out_dir)
-    write_readme()
 
     pbase_full.to_csv(out_dir / "pbase_complete.csv", index=False)
     panel.to_csv(out_dir / "panel_dataset.csv", index=False)

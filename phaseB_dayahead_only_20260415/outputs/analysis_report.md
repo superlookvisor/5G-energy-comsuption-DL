@@ -19,7 +19,7 @@
   "n_bs_after": 923,
   "n_rows_after": 92629,
   "output_subdir": "outputs",
-  "proxy_weight_mode": "learned",
+  "proxy_weight_mode": "fixed",
   "proxy_weights_json": null
 }
 ```
@@ -31,13 +31,13 @@
 - 图：`fig_load_vs_energy.png`、`fig_es_mode_impact.png`、`fig_dayahead_trajectory.png`、`fig_prediction_vs_actual.png`、`fig_error_by_horizon.png`。
 
 ## 4. 结果摘要
-- 最佳日前（按完整 24h 轨迹 MAPE）：`two_stage_proxy` + `RandomForest`，MAPE=0.0965。
-- 负载单调分箱比例 100.00%，Spearman=0.6889；`p_base` 与 `n_cells` 相关 0.8073。
+- 最佳日前（按完整 24h 轨迹 MAPE）：`two_stage_proxy` + `RandomForest`，MAPE=0.1202。
+- 负载单调分箱比例 100.00%，Spearman=0.6889；`p_base` 与 `n_cells` 相关 0.8021。
 - ES 模式均值差（Top 3）：  
-- S_ESMode5: -14.1729
-- S_ESMode2: -13.4492
-- S_ESMode1: -13.1630
-- 各步 MAE 最优单步：h=24，`two_stage_proxy` + `SemiPhysical_Ridge`。
+- S_ESMode5: -14.4563
+- S_ESMode2: -12.3929
+- S_ESMode1: -12.1254
+- 各步 MAE 最优单步：h=24，`two_stage_proxy` + `RandomForest`。
 
 ## 5. 输出目录
 本报告与 CSV/图位于同一目录：`outputs/`。

@@ -1,6 +1,6 @@
 # Phase B（仅日前预测）
 
-本目录用于**日前（day-ahead）**能耗预测实验：以每天 `00:00` 作为 `origin_time`，预测未来 \(h\in[1,24]\) 小时的目标时刻 `target_time` 的 `dynamic_energy` / `Energy`。
+本目录用于**日前（day-ahead）**能耗预测实验：以每天 `00:00` 作为 `origin_time`，预测未来 h\in[1,24] 小时的目标时刻 `target_time` 的 `dynamic_energy` / `Energy`。
 
 - **主脚本**：`phaseB_dayahead_only_20260415/run_phaseB_dayahead_only.py`
 - **关键概念**
@@ -21,7 +21,7 @@
 ## 2. 一键运行（不做过滤）
 
 ```bash
-python phaseB_dayahead_only_20260415/run_phaseB_dayahead_only.py
+python run_phaseB_dayahead_only.py
 ```
 
 默认输出到：`phaseB_dayahead_only_20260415/outputs/`
@@ -31,6 +31,7 @@ python phaseB_dayahead_only_20260415/run_phaseB_dayahead_only.py
 ## 3. 运行（启用 BS 过滤）
 
 常用过滤参数：
+
 - `--min-merged-obs-per-bs`：每个 BS 最少保留的 merged 观测行数
 - `--exclude-bs-csv`：显式剔除的 BS 列表（CSV 需包含列 `BS`）
 
@@ -49,15 +50,15 @@ python phaseB_dayahead_only_20260415/run_phaseB_dayahead_only.py \
 ## 4. 代理权重学习与传参（stacking）
 
 two-stage proxy 中 `*_hat` 的组合权重可以：
+
 - **固定权重**（默认）：使用脚本内置的常数权重
-- **学习权重**：在训练 BS 上学习全局权重 \(w\ge 0,\ \sum w=1\)，并应用到 `*_hat`
+- **学习权重**：在训练 BS 上学习全局权重 w\ge 0,\ \sum w=1，并应用到 `*_hat`
 - **加载权重**：直接读取已有 `proxy_weights.json`
 
 ### 4.1 学习并应用权重
 
 ```bash
-python phaseB_dayahead_only_20260415/run_phaseB_dayahead_only.py \
-  --learn-proxy-weights
+python phaseB_dayahead_only_20260415/run_phaseB_dayahead_only.py --learn-proxy-weights --output-subdir outputs_filter_learned
 ```
 
 若同时启用过滤：
@@ -70,6 +71,7 @@ python phaseB_dayahead_only_20260415/run_phaseB_dayahead_only.py \
 ```
 
 脚本会在输出目录中写入：
+
 - `proxy_weights.json`：学习到的权重
 - `proxy_weights_meta.json`：学习过程与拟合误差统计
 
@@ -107,14 +109,12 @@ python phaseB_dayahead_only_20260415/run_phaseB_dayahead_only.py \
   - `physics_checks.csv`：物理一致性/约束相关检查结果
   - `es_mode_effects.csv`：ES 模式影响分析结果
   - `filter_meta.json`：过滤条件、输出模式（fixed/learned/loaded）等元信息
-
 - **图表**
   - `fig_prediction_vs_actual.png`：预测 vs 真值散点/对比图
   - `fig_error_by_horizon.png`：误差随 `horizon` 的变化
   - `fig_dayahead_trajectory.png`：代表性轨迹的预测曲线
   - `fig_load_vs_energy.png`：负载与能耗关系图
   - `fig_es_mode_impact.png`：ES 模式影响可视化
-
 - **报告**
   - `analysis_report.md`：自动生成的文字报告（包含关键指标与结论摘要）
 
@@ -131,5 +131,7 @@ python phaseB_dayahead_only_20260415/fallback_audit/analyze_fallback_usage.py \
 ```
 
 输出：
+
 - `outputs_fallback_audit/analysis_report.md`
 - `outputs_fallback_audit/fallback_summary_by_horizon.csv`
+

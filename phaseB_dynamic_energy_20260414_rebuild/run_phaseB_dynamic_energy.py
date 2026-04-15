@@ -17,8 +17,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-REPO_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(r"h:\Zero_Ray\5G-energy-comsuption-DL")
+REPO_ROOT = PROJECT_ROOT
 DATA_DIR = PROJECT_ROOT / "data"
 PHASEA_DIR = REPO_ROOT / "phaseA_static_energy_20260413"
 BASE_DIR = Path(__file__).resolve().parent
@@ -411,11 +411,9 @@ def build_dayahead_dataset(panel: pd.DataFrame) -> Tuple[Dict[str, pd.DataFrame]
             "energy_true",
             "horizon",
             "load_mean_proxy_24",
-            "load_mean_proxy_168",
             "load_mean_roll_proxy",
             "load_std_roll_proxy",
             "load_pmax_proxy_24",
-            "load_pmax_proxy_168",
             "n_cells",
             "sum_pmax",
             "sum_antennas",
@@ -519,14 +517,13 @@ def build_dayahead_model_specs(strategy: str) -> List[ModelSpec]:
         ] + [f"{col}_hat" for col in S_COLS] + [f"I_{col.split('_', 1)[1]}_hat" for col in S_COLS]
         rf_features = semi_features + ["load_mean_roll24", "load_pmax_roll24", "load_std_roll24"]
     else:
-        physical_features = ["load_pmax_proxy_24", "load_pmax_proxy_168", "load_std_roll_proxy"] + [f"neg_{col}_hour_prior" for col in S_COLS]
+        # 数据不足 7 天时，168h 前一周同小时代理通常全缺失，会触发 imputer 警告且对建模无贡献，因此不纳入特征集合。
+        physical_features = ["load_pmax_proxy_24", "load_std_roll_proxy"] + [f"neg_{col}_hour_prior" for col in S_COLS]
         semi_features = [
             "load_mean_proxy_24",
-            "load_mean_proxy_168",
             "load_mean_roll_proxy",
             "load_std_roll_proxy",
             "load_pmax_proxy_24",
-            "load_pmax_proxy_168",
             "sum_pmax",
             "n_cells",
             "sum_antennas",
@@ -621,13 +618,15 @@ def run_intraday_models(panel: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame
             preds["model"] = spec.name
             pred_rows.append(preds)
 
-            fitted = fit_full_model(dataset.dropna(subset=spec.feature_cols), spec)
-            coef = get_coefficients(fitted, spec)
-            coef["task"] = "intraday"
-            coef["strategy"] = "realtime"
-            coef["horizon"] = horizon
-            coef["model"] = spec.name
-            coef_rows.append(coef)
+            full_fit_df = dataset.dropna(subset=["y_true"] + list(spec.feature_cols))
+            if len(full_fit_df) > 0:
+                fitted = fit_full_model(full_fit_df, spec)
+                coef = get_coefficients(fitted, spec)
+                coef["task"] = "intraday"
+                coef["strategy"] = "realtime"
+                coef["horizon"] = horizon
+                coef["model"] = spec.name
+                coef_rows.append(coef)
 
     return pd.concat(metrics_rows, ignore_index=True), pd.concat(pred_rows, ignore_index=True), pd.concat(coef_rows, ignore_index=True)
 
@@ -651,13 +650,15 @@ def run_dayahead_models(panel: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame
             preds["model"] = spec.name
             pred_rows.append(preds)
 
-            fitted = fit_full_model(dataset.dropna(subset=spec.feature_cols), spec)
-            coef = get_coefficients(fitted, spec)
-            coef["task"] = "dayahead"
-            coef["strategy"] = strategy
-            coef["horizon"] = -1
-            coef["model"] = spec.name
-            coef_rows.append(coef)
+            full_fit_df = dataset.dropna(subset=["y_true"] + list(spec.feature_cols))
+            if len(full_fit_df) > 0:
+                fitted = fit_full_model(full_fit_df, spec)
+                coef = get_coefficients(fitted, spec)
+                coef["task"] = "dayahead"
+                coef["strategy"] = strategy
+                coef["horizon"] = -1
+                coef["model"] = spec.name
+                coef_rows.append(coef)
 
     predictions = pd.concat(pred_rows, ignore_index=True)
     horizon_metrics = (
@@ -904,22 +905,6 @@ ES模式的节能效果存在差异。依据负载分层后的均值差，能耗
     (BASE_DIR / "analysis_report.md").write_text(report, encoding="utf-8")
 
 
-def write_readme() -> None:
-    readme = """# 阶段B动态能耗建模重建交付
-
-## 目录说明
-- `run_phaseB_dynamic_energy.py`：完整可运行代码。
-- `outputs/`：CSV结果与图表。
-- `analysis_report.md`：中文 TSG 风格分析报告。
-
-## 运行方式
-```bash
-python run_phaseB_dynamic_energy.py
-```
-"""
-    (BASE_DIR / "README.md").write_text(readme, encoding="utf-8")
-
-
 def main() -> None:
     ensure_dirs()
     panel, pbase_full, pbase_meta = build_master_panel()
@@ -936,7 +921,6 @@ def main() -> None:
     plot_prediction_vs_actual(intraday_predictions, strict_metrics, dayahead_predictions)
     plot_error_by_horizon(intraday_metrics, dayahead_horizon_metrics)
     build_report(pbase_meta, intraday_metrics, strict_metrics, dayahead_horizon_metrics, physics_checks, es_effects)
-    write_readme()
 
     pbase_full.to_csv(OUTPUT_DIR / "pbase_complete.csv", index=False)
     panel.to_csv(OUTPUT_DIR / "panel_dataset.csv", index=False)

@@ -63,23 +63,23 @@ def compute_fallback_audit(panel: pd.DataFrame, horizons: Iterable[int]) -> Tupl
 
     origins = panel[panel["hour"] == 0].copy()
     g = panel.groupby("BS", group_keys=False)
+    panel_idx = panel.set_index(["BS", "Time"], drop=False)
 
     rows: List[pd.DataFrame] = []
     for horizon in horizons:
-        same_hour_shift = 24 - int(horizon)
-
         sample = origins[["BS", "Time", "load_mean", "load_pmax_weighted", "load_std", "load_mean_roll24", "load_pmax_roll24", "load_std_roll24"]].copy()
         sample = sample.rename(columns={"Time": "origin_time"})
         sample["horizon"] = int(horizon)
 
-        # Mirrors the code: g[col].shift(same_hour_shift).reindex(sample.index)
-        prev_lm = g["load_mean"].shift(same_hour_shift).reindex(origins.index)
-        prev_lp = g["load_pmax_weighted"].shift(same_hour_shift).reindex(origins.index)
-        prev_ls = g["load_std"].shift(same_hour_shift).reindex(origins.index)
-
-        sample["load_mean_prevday_samehour"] = prev_lm.values
-        sample["load_pmax_prevday_samehour"] = prev_lp.values
-        sample["load_std_prevday_samehour"] = prev_ls.values
+        # Time-aligned prevday_samehour (matches the main pipeline logic):
+        # target_time := origin_time + horizon hours (by per-BS time shift),
+        # prevday_samehour := value at (BS, target_time - 24h).
+        sample["target_time"] = g["Time"].shift(-int(horizon)).reindex(origins.index).to_numpy()
+        prevday_time = pd.to_datetime(sample["target_time"], errors="coerce") - pd.Timedelta(hours=24)
+        prevday_key = pd.MultiIndex.from_arrays([sample["BS"], prevday_time])
+        sample["load_mean_prevday_samehour"] = panel_idx["load_mean"].reindex(prevday_key).to_numpy()
+        sample["load_pmax_prevday_samehour"] = panel_idx["load_pmax_weighted"].reindex(prevday_key).to_numpy()
+        sample["load_std_prevday_samehour"] = panel_idx["load_std"].reindex(prevday_key).to_numpy()
 
         sample["trajectory_id"] = sample["BS"].astype(str) + "@" + sample["origin_time"].dt.strftime("%Y-%m-%d")
 
