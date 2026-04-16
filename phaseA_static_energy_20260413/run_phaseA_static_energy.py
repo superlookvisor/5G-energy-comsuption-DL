@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import shutil
+import subprocess
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -20,6 +22,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = PROJECT_ROOT / "data"
 BASE_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = BASE_DIR / "outputs"
+FIGURE_DIR = OUTPUT_DIR / "figures_emf"
 
 # 优先使用常见中文字体，避免图标题乱码
 plt.rcParams["font.sans-serif"] = ["Microsoft YaHei", "SimHei", "Arial Unicode MS", "DejaVu Sans"]
@@ -28,6 +31,28 @@ plt.rcParams["axes.unicode_minus"] = False
 
 def ensure_dirs() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    FIGURE_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def save_current_figure_emf(filename: str) -> None:
+    """Save the current Matplotlib figure as EMF through Inkscape conversion."""
+    stem = Path(filename).stem
+    svg_path = FIGURE_DIR / f"{stem}.svg"
+    emf_path = FIGURE_DIR / f"{stem}.emf"
+    plt.savefig(svg_path, format="svg", bbox_inches="tight")
+
+    inkscape = shutil.which("inkscape")
+    if inkscape is None:
+        raise RuntimeError(
+            "Saving EMF requires Inkscape on PATH. Install Inkscape or add it to PATH, "
+            f"then rerun this script. Temporary SVG saved at: {svg_path}"
+        )
+
+    subprocess.run(
+        [inkscape, str(svg_path), "--export-type=emf", f"--export-filename={emf_path}"],
+        check=True,
+    )
+    svg_path.unlink(missing_ok=True)
 
 
 def load_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -316,7 +341,7 @@ def plot_method_distribution(est: pd.DataFrame, window_name: str) -> None:
     plt.title(f"不同估计方法的 P_base 分布对比（窗口: {window_name}）")
     plt.xticks(rotation=20)
     plt.tight_layout()
-    plt.savefig(OUTPUT_DIR / "fig_method_distribution.png", dpi=180)
+    save_current_figure_emf("fig_method_distribution.emf")
     plt.close()
 
 
@@ -334,7 +359,7 @@ def plot_scatter_relations(dataset: pd.DataFrame, target_col: str) -> None:
     plt.ylabel("P_base")
     plt.title("P_base vs n_cells")
     plt.tight_layout()
-    plt.savefig(OUTPUT_DIR / "fig_scatter_pbase_vs_features.png", dpi=180)
+    save_current_figure_emf("fig_scatter_pbase_vs_features.emf")
     plt.close()
 
 
@@ -349,7 +374,7 @@ def plot_window_stability(est: pd.DataFrame, method: str) -> None:
     plt.title(f"不同静态窗口下 P_base 稳定性（方法: {method}）")
     plt.xticks(rotation=20)
     plt.tight_layout()
-    plt.savefig(OUTPUT_DIR / "fig_window_stability.png", dpi=180)
+    save_current_figure_emf("fig_window_stability.emf")
     plt.close()
 
 
@@ -361,7 +386,7 @@ def plot_window_coverage(summary: pd.DataFrame) -> None:
     plt.xticks(rotation=20)
     plt.ylim(0, 1.05)
     plt.tight_layout()
-    plt.savefig(OUTPUT_DIR / "fig_window_coverage.png", dpi=180)
+    save_current_figure_emf("fig_window_coverage.emf")
     plt.close()
 
 
@@ -405,13 +430,13 @@ def build_report(
 ## 1. 代码与运行说明
 - 主脚本：`run_phaseA_static_energy.py`
 - 数据输入：`../data/ECdata.csv`, `../data/CLdata.csv`, `../data/BSinfo.csv`
-- 关键输出：`outputs/` 下的图表与CSV结果文件
+- 关键输出：`outputs/` 下的CSV结果文件，以及 `outputs/figures_emf/` 下的EMF图像文件
 
 ## 2. 关键图表说明
-- `fig_method_distribution.png`：同一静态窗口中不同估计器（min / quantile / mean / median / trimmed mean）的 `P_base` 分布对比。
-- `fig_scatter_pbase_vs_features.png`：`P_base` 与 `sum_pmax`、`n_cells` 的散点关系，用于验证物理单调趋势。
-- `fig_window_stability.png`：固定估计方法下，不同静态窗口得到的 `P_base` 稳定性对比。
-- `fig_window_coverage.png`：不同静态窗口对BS样本覆盖率的影响。
+- `outputs/figures_emf/fig_method_distribution.emf`：同一静态窗口中不同估计器（min / quantile / mean / median / trimmed mean）的 `P_base` 分布对比。
+- `outputs/figures_emf/fig_scatter_pbase_vs_features.emf`：`P_base` 与 `sum_pmax`、`n_cells` 的散点关系，用于验证物理单调趋势。
+- `outputs/figures_emf/fig_window_stability.emf`：固定估计方法下，不同静态窗口得到的 `P_base` 稳定性对比。
+- `outputs/figures_emf/fig_window_coverage.emf`：不同静态窗口对BS样本覆盖率的影响。
 
 ## 3. 结果分析（TSG风格）
 ### 3.1 静态窗口敏感性分析
@@ -532,7 +557,8 @@ def main() -> None:
 
 ## 目录说明
 - `run_phaseA_static_energy.py`：完整可运行代码（数据清洗、Cell->BS聚合、窗口筛选、P_base估计、建模、评估、可视化）。
-- `outputs/`：全部中间结果、指标表和图表。
+- `outputs/`：全部中间结果和指标表。
+- `outputs/figures_emf/`：EMF格式图像输出目录。
 - `analysis_report.md`：中文学术风格结果分析（含结论与加分项讨论）。
 
 ## 运行方式

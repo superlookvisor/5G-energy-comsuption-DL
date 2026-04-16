@@ -17,8 +17,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 
-PROJECT_ROOT = Path(r"h:\Zero_Ray\5G-energy-comsuption-DL")
-REPO_ROOT = PROJECT_ROOT
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = PROJECT_ROOT / "data"
 PHASEA_DIR = REPO_ROOT / "phaseA_static_energy_20260413"
 BASE_DIR = Path(__file__).resolve().parent

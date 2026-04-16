@@ -21,3 +21,9 @@ plots/
 .idea/
 .vscode/
 .DS_Store
+
+# Global artifact files
+*.csv
+*.json
+*.png
+*.pdf

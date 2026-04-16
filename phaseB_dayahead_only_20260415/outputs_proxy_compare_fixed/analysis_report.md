@@ -18,7 +18,7 @@
   "n_rows_removed_by_exclude_csv": 0,
   "n_bs_after": 923,
   "n_rows_after": 92629,
-  "output_subdir": "outputs",
+  "output_subdir": "outputs_proxy_compare_fixed",
   "proxy_weight_mode": "fixed",
   "proxy_weights_json": null
 }
@@ -40,4 +40,4 @@
 - 各步 MAE 最优单步：h=6，`two_stage_proxy` + `RandomForest`。
 
 ## 5. 输出目录
-本报告与 CSV/图位于同一目录：`outputs/`。
+本报告与 CSV/图位于同一目录：`outputs_proxy_compare_fixed/`。
