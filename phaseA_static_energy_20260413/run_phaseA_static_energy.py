@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import os
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -19,7 +20,34 @@ from sklearn.preprocessing import StandardScaler
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DATA_DIR = PROJECT_ROOT / "data"
+
+
+def resolve_data_dir() -> Path:
+    """
+    Resolve the shared `data/` directory.
+
+    Priority:
+    1) ENV `ENERGY_MODEL_DATA_DIR`
+    2) `<repo>/energy_model_anp/data`
+    3) `<repo>/data` (one level above `energy_model_anp`)
+    """
+    env = os.getenv("ENERGY_MODEL_DATA_DIR")
+    if env:
+        p = Path(env).expanduser().resolve()
+        if p.exists():
+            return p
+
+    candidates = [
+        PROJECT_ROOT / "data",
+        PROJECT_ROOT.parent / "data",
+    ]
+    for c in candidates:
+        if c.exists():
+            return c
+    return candidates[0]
+
+
+DATA_DIR = resolve_data_dir()
 BASE_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = BASE_DIR / "outputs"
 FIGURE_DIR = OUTPUT_DIR / "figures_emf"
@@ -39,14 +67,15 @@ def save_current_figure_emf(filename: str) -> None:
     stem = Path(filename).stem
     svg_path = FIGURE_DIR / f"{stem}.svg"
     emf_path = FIGURE_DIR / f"{stem}.emf"
+    png_path = FIGURE_DIR / f"{stem}.png"
     plt.savefig(svg_path, format="svg", bbox_inches="tight")
+    # 同时导出 PNG，便于在无 Inkscape 环境下直接查看
+    plt.savefig(png_path, format="png", dpi=300, bbox_inches="tight")
 
     inkscape = shutil.which("inkscape")
     if inkscape is None:
-        raise RuntimeError(
-            "Saving EMF requires Inkscape on PATH. Install Inkscape or add it to PATH, "
-            f"then rerun this script. Temporary SVG saved at: {svg_path}"
-        )
+        # 无 Inkscape 时不阻断主流程：保留 SVG/PNG，跳过 EMF 转换
+        return
 
     subprocess.run(
         [inkscape, str(svg_path), "--export-type=emf", f"--export-filename={emf_path}"],
@@ -59,6 +88,15 @@ def load_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     ec = pd.read_csv(DATA_DIR / "ECdata.csv")
     cl = pd.read_csv(DATA_DIR / "CLdata.csv")
     bsinfo = pd.read_csv(DATA_DIR / "BSinfo.csv")
+
+    # 兼容不同数据版本的列名（历史拼写/大小写差异）
+    bs_rename = {}
+    if "maximum_transimission_power" in bsinfo.columns and "Maximum_Trans_Power" not in bsinfo.columns:
+        bs_rename["maximum_transimission_power"] = "Maximum_Trans_Power"
+    if "Transimission_mode" in bsinfo.columns and "ModeType" not in bsinfo.columns:
+        bs_rename["Transimission_mode"] = "ModeType"
+    if bs_rename:
+        bsinfo = bsinfo.rename(columns=bs_rename)
 
     ec["Time"] = pd.to_datetime(ec["Time"], errors="coerce")
     cl["Time"] = pd.to_datetime(cl["Time"], errors="coerce")

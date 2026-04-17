@@ -77,12 +77,22 @@ class ResidualTrajectoryDataset(Dataset):
         self.residual_std = max(float(residual_std), 1e-6)
         self.config = config
         self.train_mode = train_mode
+        if self.df.empty:
+            # Allow empty splits (e.g., tiny smoke tests) without crashing sklearn's scaler.
+            self.X = np.empty((0, len(self.feature_cols)), dtype=np.float32)
+            self.y_scaled = np.empty((0,), dtype=np.float32)
+            self.groups = []
+            self.bs_to_rows = {}
+            return
+
         self.df["origin_time"] = pd.to_datetime(self.df["origin_time"])
         self.df["target_time"] = pd.to_datetime(self.df["target_time"])
         self.df = self.df.sort_values(["BS", "origin_time", "horizon"]).reset_index(drop=True)
         x_raw = self.df[self.feature_cols].fillna(0.0).to_numpy(dtype=np.float32)
         self.X = self.feature_scaler.transform(x_raw).astype(np.float32)
-        self.y_scaled = ((self.df["residual_true"].to_numpy(dtype=np.float32) - self.residual_mean) / self.residual_std).astype(np.float32)
+        self.y_scaled = (
+            (self.df["residual_true"].to_numpy(dtype=np.float32) - self.residual_mean) / self.residual_std
+        ).astype(np.float32)
         self.groups = list(self.df.groupby(["BS", "origin_time"], sort=False).indices.items())
         self.bs_to_rows = {str(bs): g.index.to_numpy(dtype=np.int64) for bs, g in self.df.groupby("BS", sort=False)}
 

@@ -12,20 +12,22 @@
 
 ## 符号说明
 
-| 符号 | 含义 |
-| --- | --- |
-| $b$ | 基站索引。 |
-| $t_0$ | 日前预测起点；本文中固定为 00:00。 |
-| $h$ | 预测时距，$h \in \{1,\ldots,24\}$（单位：小时）。 |
-| $E_{b,t}$ | 观测到的基站总能耗。 |
-| $p^{base}_b$ | 由 Phase A 导入的静态基功率分量。 |
-| $y_{b,t}$ | 动态能耗分量，$y_{b,t}=E_{b,t}-p^{base}_b$。 |
-| $\widehat{E}_{b,t_0+h}$ | 预测的基站总能耗。 |
-| $\widehat{D}_{1}, \widehat{D}_{2}, \widehat{D}_{3}$ | 分别对应加权负载、非线性负载与负载波动性的代理物理特征。 |
-| $S_m$ | 第 $m$ 种节能模式强度，$m=1,\ldots,6$。 |
-| $\widehat{S}_m$ | 第 $m$ 种节能模式的日前代理。 |
-| $\widehat{I}_m$ | 交互代理项，$\widehat{I}_m=\widehat{S}_m \cdot \widehat{load}_{pmax}$。 |
-| $w$ | 满足 $w \ge 0$ 且 $\mathbf{1}^{T}w=1$ 的凸代理权重向量。 |
+
+| 符号                                                  | 含义                                                               |
+| --------------------------------------------------- | ---------------------------------------------------------------- |
+| $b$                                                 | 基站索引。                                                            |
+| $t_0$                                               | 日前预测起点；本文中固定为 00:00。                                             |
+| $h$                                                 | 预测时距，$h \in 1,\ldots,24$（单位：小时）。                                 |
+| $E_{b,t}$                                           | 观测到的基站总能耗。                                                       |
+| $p^{base}_b$                                        | 由 Phase A 导入的静态基功率分量。                                            |
+| $y_{b,t}$                                           | 动态能耗分量，$y_{b,t}=E_{b,t}-p^{base}_b$。                             |
+| $\widehat{E}_{b,t_0+h}$                             | 预测的基站总能耗。                                                        |
+| $\widehat{D}*{1}, \widehat{D}*{2}, \widehat{D}_{3}$ | 分别对应加权负载、非线性负载与负载波动性的代理物理特征。                                     |
+| $S_m$                                               | 第 $m$ 种节能模式强度，$m=1,\ldots,6$。                                    |
+| $\widehat{S}_m$                                     | 第 $m$ 种节能模式的日前代理。                                                |
+| $\widehat{I}_m$                                     | 交互代理项，$\widehat{I}_m=\widehat{S}*m \cdot \widehat{load}*{pmax}$。 |
+| $w$                                                 | 满足 $w \ge 0$ 且 $\mathbf{1}^{T}w=1$ 的凸代理权重向量。                     |
+
 
 ## I. 引言
 
@@ -46,7 +48,9 @@
 
 $\widehat{E}_{b,t_0+h}=p^{base}_b+\widehat{y}_{b,t_0+h}$。
 
-其中，静态项 $p^{base}_b$ 取自 Phase A（配置为 `D_relaxed + quantile_10`）；Phase B 则聚焦于动态分量 $\widehat{y}_{b,t_0+h}$ 的预测。可用信息被限制为不晚于预测起点的观测以及历史同小时统计摘要，从而避免在实际日前流程中不可获得的日内滞后特征与未来协变量进入模型。
+其中，静态项 $p^{base}_b$ 取自 Phase A（配置为 `D_relaxed + quantile_10`）；
+Phase B 则聚焦于动态分量 $\widehat{y}_{b,t_0+h}$ 的预测。
+可用信息被限制为不晚于预测起点的观测以及历史同小时统计摘要，从而避免在实际日前流程中不可获得的日内滞后特征与未来协变量进入模型。
 
 评价指标从两个互补角度构造：
 
@@ -65,11 +69,11 @@ $\widehat{E}_{b,t_0+h}=p^{base}_b+\widehat{y}_{b,t_0+h}$。
 
 - 周期时间编码：小时与星期几的正弦/余弦项；
 - 滚动 24 h 负载统计量：`load_mean_roll24`、`load_pmax_roll24`、`load_std_roll24`；
-- 历史同小时节能先验：`S_*_hour_prior`；
+- 历史同小时节能先验：`S_hour_prior`；
 - 静态站点属性：`n_cells`、`sum_pmax`、`sum_antennas`；
 - 动态能耗标签：`dynamic_energy = Energy - p_base`。
 
-同时，日内滞后类特征（如 `energy_lag*`、`dynamic_lag*`、`load_*_lag1`、`S_*_lag1`）被明确排除。
+同时，日内滞后类特征（如 `energy_lag`*、`dynamic_lag`、`load_lag1`、`S_lag1`）被明确排除。
 
 ### B. 两类代理策略
 
@@ -77,19 +81,21 @@ $\widehat{E}_{b,t_0+h}=p^{base}_b+\widehat{y}_{b,t_0+h}$。
 
 策略一 `two_stage_proxy` 首先构造负载与节能协变量代理：
 
-$\widehat{load}_{mean}, \quad \widehat{load}_{pmax}, \quad \widehat{load}_{std}, \quad \widehat{S}_{m}$。
+$\widehat{load}_{mean}, \quad \widehat{load}_{pmax}, 
+\quad \widehat{load}_{std}, \quad \widehat{S}_{m}$。
 
 进而将其映射为物理特征：
 
-$\widehat{D}_{1}=sum\_pmax_b \cdot \widehat{load}_{pmax}$，
+$\widehat{D}_{1}=sumpmax_b \cdot \widehat{load}_{pmax}$，
 
-$\widehat{D}_{2}=sum\_pmax_b \cdot \widehat{load}_{pmax}^{2}$，
+$\widehat{D}_{2}=sumpmax_b \cdot \widehat{load}_{pmax}^{2}$，
 
 $\widehat{D}_{3}=\widehat{load}_{std}$，
 
 $\widehat{I}_{m}=\widehat{S}_{m}\cdot\widehat{load}_{pmax}$。
 
-策略二 `historical_proxy` 直接使用历史代理项，例如前一日同小时负载、滚动负载统计量及同小时节能先验等；该策略为轻量基线，物理引导变换较少。
+策略二 `historical_proxy` 直接使用历史代理项，包括：前一日同小时负载、
+滚动负载统计量及同小时节能先验等；该策略为轻量基线，物理引导变换较少。
 
 ### C. 固定权重与学习型权重
 
@@ -97,18 +103,20 @@ $\widehat{I}_{m}=\widehat{S}_{m}\cdot\widehat{load}_{pmax}$。
 
 学习型权重版本通过下式估计全局凸权重：
 
-$\min_{w\in \Delta}\frac{1}{N}\sum_{i=1}^{N}\left(z_i-\sum_{k}w_k x_{i,k}\right)^2+\lambda\lVert w\rVert_2^2,\quad \Delta=\{w \mid w \ge 0,\mathbf{1}^{T}w=1\}$。
+$\min_{w\in \Delta}\frac{1}{N}\sum_{i=1}^{N}\left(z_i-\sum_{k}w_k x_{i,k}\right)^2+\lambda\lVert w\rVert_2^2,\quad \Delta=w \mid w \ge 0,\mathbf{1}^{T}w=1$。
 
-其中，$z_i$ 表示目标时刻的真实协变量（例如 $t_0+h$ 时刻的 `load_mean`），而非未来能耗标签；从而在避免预测目标 $E_{b,t_0+h}$ 信息泄漏的前提下改善代理质量。实现上，先在基站层面划分 80%/20% 训练—验证集以学习权重，再将所得全局权重用于下游模型训练。
+其中，$z_i$ 表示目标时刻的真实协变量；从而在避免预测目标 $E_{b,t_0+h}$ 信息泄漏的前提下改善代理质量。实现上，先在基站层面划分 80%/20% 训练—验证集以学习权重，再将所得全局权重用于下游模型训练。
 
 过滤后主实验中学习到的权重如表所列。
 
-| 代理项 | 来源 | 权重 |
-| --- | --- | --- |
+
+| 代理项             | 来源                       | 权重                     |
+| --------------- | ------------------------ | ---------------------- |
 | `load_mean_hat` | prevday, roll24, current | 0.8153, 0.0331, 0.1516 |
 | `load_pmax_hat` | prevday, roll24, current | 0.8161, 0.0188, 0.1651 |
-| `load_std_hat` | prevday, roll24 | 0.8083, 0.1917 |
-| `S_*_hat` | prevday, hour_prior | 0.9796, 0.0204 |
+| `load_std_hat`  | prevday, roll24          | 0.8083, 0.1917         |
+| `S_*_hat`       | prevday, hour_prior      | 0.9796, 0.0204         |
+
 
 ### D. 预测模型
 
@@ -133,13 +141,15 @@ $\min_{w\in \Delta}\frac{1}{N}\sum_{i=1}^{N}\left(z_i-\sum_{k}w_k x_{i,k}\right)
 
 **表 I** 汇总实验矩阵，可由各输出目录中的 `filter_meta.json` 及对比目录中的 `compare_meta.json` 生成。
 
-| 实验 | 输出目录 | 过滤 | 代理权重 | 基站数 / 行数 | 角色 |
-| --- | --- | --- | --- | --- | --- |
-| E0 | `outputs_proxy_compare_fixed/` | 否 | 固定 | 923 / 92629 | 未过滤基线 |
-| E1 | `outputs_proxy_compare_learned/` | 否 | 学习 | 923 / 92629 | 未过滤权重学习消融 |
-| E2 | `outputs_filter_compare_fixed/` | 是 | 固定 | 818 / 90621 | 过滤后基线 |
-| E3 | `outputs_filter_compare_learned/` | 是 | 学习 | 818 / 90621 | 主实验 |
-| E4 | `outputs_proxy_impact_filtered/` | 是 | 固定 vs 学习 | aligned predictions=71608 | 主消融分析 |
+
+| 实验  | 输出目录                              | 过滤  | 代理权重     | 基站数 / 行数                  | 角色        |
+| --- | --------------------------------- | --- | -------- | ------------------------- | --------- |
+| E0  | `outputs_proxy_compare_fixed/`    | 否   | 固定       | 923 / 92629               | 未过滤基线     |
+| E1  | `outputs_proxy_compare_learned/`  | 否   | 学习       | 923 / 92629               | 未过滤权重学习消融 |
+| E2  | `outputs_filter_compare_fixed/`   | 是   | 固定       | 818 / 90621               | 过滤后基线     |
+| E3  | `outputs_filter_compare_learned/` | 是   | 学习       | 818 / 90621               | 主实验       |
+| E4  | `outputs_proxy_impact_filtered/`  | 是   | 固定 vs 学习 | aligned predictions=71608 | 主消融分析     |
+
 
 正式排版中，若列宽受限，可将输出目录名置于脚注或可复现性说明中。
 
@@ -163,13 +173,15 @@ $MAPE=\frac{1}{N}\sum_i\frac{|E_i-\widehat{E}_i|}{\max(|E_i|,\epsilon)}$。
 
 正文可保留如下代表性结果行：
 
-| 设置 | 策略 | 模型 | MAPE | 峰值误差 | 谷值误差 | 完整轨迹数 |
-| --- | --- | --- | --- | --- | --- | --- |
-| 过滤 + 学习权重 | two_stage_proxy | RandomForest | 0.09096 | 4.3459 | 1.2176 | 9 |
-| 过滤 + 学习权重 | historical_proxy | RandomForest | 0.09984 | 4.9499 | 1.6297 | 9 |
-| 过滤 + 固定权重 | two_stage_proxy | RandomForest | 0.11367 | 5.1110 | 2.5322 | 9 |
-| 未过滤 + 学习权重 | two_stage_proxy | RandomForest | 0.09674 | 6.2581 | 1.0910 | 9 |
-| 未过滤 + 固定权重 | two_stage_proxy | RandomForest | 0.11032 | 5.9051 | 2.5041 | 9 |
+
+| 设置         | 策略               | 模型           | MAPE    | 峰值误差   | 谷值误差   | 完整轨迹数 |
+| ---------- | ---------------- | ------------ | ------- | ------ | ------ | ----- |
+| 过滤 + 学习权重  | two_stage_proxy  | RandomForest | 0.09096 | 4.3459 | 1.2176 | 9     |
+| 过滤 + 学习权重  | historical_proxy | RandomForest | 0.09984 | 4.9499 | 1.6297 | 9     |
+| 过滤 + 固定权重  | two_stage_proxy  | RandomForest | 0.11367 | 5.1110 | 2.5322 | 9     |
+| 未过滤 + 学习权重 | two_stage_proxy  | RandomForest | 0.09674 | 6.2581 | 1.0910 | 9     |
+| 未过滤 + 固定权重 | two_stage_proxy  | RandomForest | 0.11032 | 5.9051 | 2.5041 | 9     |
+
 
 结果表明：在过滤设定下，学习型权重的两阶段代理在严格 24 h MAPE 上最低；相对同设定下的固定权重对应方法，MAPE 降低 0.02271（约 20.0%）；相对同模型下的学习型 `historical_proxy`，MAPE 降低 0.00888。
 
@@ -179,12 +191,14 @@ $MAPE=\frac{1}{N}\sum_i\frac{|E_i-\widehat{E}_i|}{\max(|E_i|,\epsilon)}$。
 
 **表 III** 建议用于展示固定权重与学习权重的差异，可由 `outputs_proxy_impact_filtered/compare_strict_metrics.csv` 生成。
 
-| 策略 | 模型 | 固定权重 MAPE | 学习权重 MAPE | Delta MAPE | Delta peak | Delta valley |
-| --- | --- | --- | --- | --- | --- | --- |
-| two_stage_proxy | RandomForest | 0.11367 | 0.09096 | -0.02271 | -0.7651 | -1.3147 |
-| historical_proxy | RandomForest | 0.12376 | 0.09984 | -0.02392 | -0.3704 | -0.9455 |
-| two_stage_proxy | SemiPhysical_Ridge | 0.17856 | 0.13701 | -0.04155 | -0.2393 | -1.1198 |
-| two_stage_proxy | Physical | 0.19421 | 0.13625 | -0.05796 | -1.5045 | -1.3114 |
+
+| 策略               | 模型                 | 固定权重 MAPE | 学习权重 MAPE | Delta MAPE | Delta peak | Delta valley |
+| ---------------- | ------------------ | --------- | --------- | ---------- | ---------- | ------------ |
+| two_stage_proxy  | RandomForest       | 0.11367   | 0.09096   | -0.02271   | -0.7651    | -1.3147      |
+| historical_proxy | RandomForest       | 0.12376   | 0.09984   | -0.02392   | -0.3704    | -0.9455      |
+| two_stage_proxy  | SemiPhysical_Ridge | 0.17856   | 0.13701   | -0.04155   | -0.2393    | -1.1198      |
+| two_stage_proxy  | Physical           | 0.19421   | 0.13625   | -0.05796   | -1.5045    | -1.3114      |
+
 
 表格可按 `Delta MAPE` 或模型重要性排序。叙述上宜突出随机森林行（对应最终最优预测器），并说明学习型权重对线性/半物理模型同样带来改善。
 
@@ -201,13 +215,15 @@ $MAPE=\frac{1}{N}\sum_i\frac{|E_i-\widehat{E}_i|}{\max(|E_i|,\epsilon)}$。
 
 **表 V** 建议报告代表性时距及样本量，可由 `outputs_filter_compare_learned/dayahead_horizon_metrics.csv` 在 $h=1,6,12,18,24$ 处选取各时距 MAE 最低行得到：
 
-| 时距 | 最优策略 | 最优模型 | MAE | RMSE | MAPE | 样本数 | 基站数 |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | two_stage_proxy | RandomForest | 2.6155 | 3.8941 | 0.1462 | 2235 | 802 |
-| 6 | two_stage_proxy | RandomForest | 1.5579 | 2.5762 | 0.0656 | 519 | 402 |
-| 12 | historical_proxy | RandomForest | 3.4591 | 4.9280 | 0.1080 | 117 | 108 |
-| 18 | two_stage_proxy | RandomForest | 3.4702 | 5.1504 | 0.1132 | 28 | 28 |
-| 24 | two_stage_proxy | SemiPhysical_Ridge | 0.8815 | 1.1530 | 0.0372 | 9 | 9 |
+
+| 时距  | 最优策略             | 最优模型               | MAE    | RMSE   | MAPE   | 样本数  | 基站数 |
+| --- | ---------------- | ------------------ | ------ | ------ | ------ | ---- | --- |
+| 1   | two_stage_proxy  | RandomForest       | 2.6155 | 3.8941 | 0.1462 | 2235 | 802 |
+| 6   | two_stage_proxy  | RandomForest       | 1.5579 | 2.5762 | 0.0656 | 519  | 402 |
+| 12  | historical_proxy | RandomForest       | 3.4591 | 4.9280 | 0.1080 | 117  | 108 |
+| 18  | two_stage_proxy  | RandomForest       | 3.4702 | 5.1504 | 0.1132 | 28   | 28  |
+| 24  | two_stage_proxy  | SemiPhysical_Ridge | 0.8815 | 1.1530 | 0.0372 | 9    | 9   |
+
 
 不宜仅凭 $h=24$ 处较低 MAE 推断“长时距预测本质上更易”，因该时距有效样本极少（9）。更稳妥的表述为：随预测时距增大，可用样本量减少，故须结合图表综合判断。
 
@@ -223,20 +239,24 @@ $MAPE=\frac{1}{N}\sum_i\frac{|E_i-\widehat{E}_i|}{\max(|E_i|,\epsilon)}$。
 
 **图 3** 建议展示节能模式影响，可采用 `outputs_filter_compare_learned/fig_es_mode_impact.png`，给出各模式在激活与未激活状态下的平均动态能耗差值。负向效应最强的模式为：
 
-| 模式 | 动态能耗差值 |
-| --- | --- |
+
+| 模式          | 动态能耗差值   |
+| ----------- | -------- |
 | `S_ESMode5` | -14.1767 |
 | `S_ESMode2` | -13.4676 |
 | `S_ESMode1` | -13.4674 |
 
+
 **表 VI** 建议汇总物理一致性检验，可由 `outputs_filter_compare_learned/physics_checks.csv` 与 `es_mode_effects.csv` 生成：
 
-| 检验项 | 数值 | 解释 |
-| --- | --- | --- |
-| 负载单调性比率 | 1.0000 | 随负载分箱升高，平均能耗非递减。 |
-| 负载—能耗 Spearman | 0.6883 | 负载与能耗呈显著正秩相关。 |
-| 最优 ES 效应为负 | 1.0000 | 至少一种节能模式使动态能耗按预期降低。 |
-| $p^{base}$-`n_cells` 相关系数 | 0.8080 | 基功率估计与站点规模相一致。 |
+
+| 检验项                       | 数值     | 解释                  |
+| ------------------------- | ------ | ------------------- |
+| 负载单调性比率                   | 1.0000 | 随负载分箱升高，平均能耗非递减。    |
+| 负载—能耗 Spearman            | 0.6883 | 负载与能耗呈显著正秩相关。       |
+| 最优 ES 效应为负                | 1.0000 | 至少一种节能模式使动态能耗按预期降低。 |
+| $p^{base}$-`n_cells` 相关系数 | 0.8080 | 基功率估计与站点规模相一致。      |
+
 
 ### F. 回退链诊断
 
@@ -267,29 +287,31 @@ $MAPE=\frac{1}{N}\sum_i\frac{|E_i-\widehat{E}_i|}{\max(|E_i|,\epsilon)}$。
 
 下表用于最终 IEEE TSG 稿件中图、表的排版与核对。
 
-| 项目 | 源文件 | 构造规则 | 建议位置 |
-| --- | --- | --- | --- |
-| 表 I：实验矩阵 | `filter_meta.json`、`compare_meta.json` | 汇总过滤策略、基站数、记录数、权重模式及用途 | 实验设置 |
-| 表 II：严格性能 | `dayahead_metrics.csv` | 按 MAPE 排序；保留所提方法及关键基线 | 仿真结果 |
-| 表 III：消融实验 | `compare_strict_metrics.csv` | 报告固定权重、学习权重及二者差值 | 仿真结果 |
-| 表 IV：代理权重 | `proxy_weights.json`、`proxy_weights_meta.json` | 展示权重；可附协变量 RMSE/MAE | 方法或结果 |
-| 表 V：分时距指标 | `dayahead_horizon_metrics.csv` | 选取代表性时距；或于附录给出全部 24 个时距 | 仿真结果 |
-| 表 VI：物理一致性检验 | `physics_checks.csv`、`es_mode_effects.csv` | 每项检验配以简短物理解释 | 仿真结果 |
-| 图 1：流程图 | 手工重绘 | 矢量示意图：原始数据→面板→代理→模型→评估 | 方法 |
-| 图 2：负载—能耗 | `fig_load_vs_energy.png` | 散点 + 二次趋势线；注明采样规模 | 物理一致性 |
-| 图 3：节能模式影响 | `fig_es_mode_impact.png` | 柱状图；按影响大小排序 | 物理一致性 |
-| 图 4：严格轨迹消融 | `fig_strict_best_metrics_compare.png` | 分组柱状图：MAPE、峰值、谷值 | 主结果 |
-| 图 5：预测散点图 | `fig_prediction_vs_actual.png` | 等比例坐标轴 + 对角参考线 | 主结果 |
-| 图 6：分时距误差 | `fig_error_by_horizon.png`、`fig_delta_mae_by_horizon.png` | 双面板：MAE 与 $\Delta$MAE | 时距分析 |
-| 图 7：轨迹图 | `fig_dayahead_trajectory.png` | 24 个时距上的观测与预测曲线 | 案例分析 |
-| 图 8：回退比例 | `fallback_summary_by_horizon.csv` | 按时距的堆叠柱状图或面积图 | 稳健性或附录 |
+
+| 项目           | 源文件                                                       | 构造规则                    | 建议位置   |
+| ------------ | --------------------------------------------------------- | ----------------------- | ------ |
+| 表 I：实验矩阵     | `filter_meta.json`、`compare_meta.json`                    | 汇总过滤策略、基站数、记录数、权重模式及用途  | 实验设置   |
+| 表 II：严格性能    | `dayahead_metrics.csv`                                    | 按 MAPE 排序；保留所提方法及关键基线   | 仿真结果   |
+| 表 III：消融实验   | `compare_strict_metrics.csv`                              | 报告固定权重、学习权重及二者差值        | 仿真结果   |
+| 表 IV：代理权重    | `proxy_weights.json`、`proxy_weights_meta.json`            | 展示权重；可附协变量 RMSE/MAE     | 方法或结果  |
+| 表 V：分时距指标    | `dayahead_horizon_metrics.csv`                            | 选取代表性时距；或于附录给出全部 24 个时距 | 仿真结果   |
+| 表 VI：物理一致性检验 | `physics_checks.csv`、`es_mode_effects.csv`                | 每项检验配以简短物理解释            | 仿真结果   |
+| 图 1：流程图      | 手工重绘                                                      | 矢量示意图：原始数据→面板→代理→模型→评估  | 方法     |
+| 图 2：负载—能耗    | `fig_load_vs_energy.png`                                  | 散点 + 二次趋势线；注明采样规模       | 物理一致性  |
+| 图 3：节能模式影响   | `fig_es_mode_impact.png`                                  | 柱状图；按影响大小排序             | 物理一致性  |
+| 图 4：严格轨迹消融   | `fig_strict_best_metrics_compare.png`                     | 分组柱状图：MAPE、峰值、谷值        | 主结果    |
+| 图 5：预测散点图    | `fig_prediction_vs_actual.png`                            | 等比例坐标轴 + 对角参考线          | 主结果    |
+| 图 6：分时距误差    | `fig_error_by_horizon.png`、`fig_delta_mae_by_horizon.png` | 双面板：MAE 与 $\Delta$MAE   | 时距分析   |
+| 图 7：轨迹图      | `fig_dayahead_trajectory.png`                             | 24 个时距上的观测与预测曲线         | 案例分析   |
+| 图 8：回退比例     | `fallback_summary_by_horizon.csv`                         | 按时距的堆叠柱状图或面积图           | 稳健性或附录 |
+
 
 为符合 IEEE 版式规范，建议将折线图与柱状图尽量重绘为矢量图形，统一字体与线宽，避免图例拥挤，并于图注或表注中给出样本量。
 
 ## 参考文献
 
-[1] IEEE Power & Energy Society, "IEEE Transactions on Smart Grid," journal scope and paper categories. https://ieee-pes.org/publications/transactions-on-smart-grid/
+[1] IEEE Power & Energy Society, "IEEE Transactions on Smart Grid," journal scope and paper categories. [https://ieee-pes.org/publications/transactions-on-smart-grid/](https://ieee-pes.org/publications/transactions-on-smart-grid/)
 
-[2] IEEE Power & Energy Society, "Preparation and Submission of Transactions Papers," IEEE PES Author's Kit. https://ieee-pes.org/publications/authors-kit/preparation-and-submission-of-transactions-papers/
+[2] IEEE Power & Energy Society, "Preparation and Submission of Transactions Papers," IEEE PES Author's Kit. [https://ieee-pes.org/publications/authors-kit/preparation-and-submission-of-transactions-papers/](https://ieee-pes.org/publications/authors-kit/preparation-and-submission-of-transactions-papers/)
 
-[3] IEEE Author Center, "Create the Text of Your Article." https://journals.ieeeauthorcenter.ieee.org/create-your-ieee-journal-article/create-the-text-of-your-article/
+[3] IEEE Author Center, "Create the Text of Your Article." [https://journals.ieeeauthorcenter.ieee.org/create-your-ieee-journal-article/create-the-text-of-your-article/](https://journals.ieeeauthorcenter.ieee.org/create-your-ieee-journal-article/create-the-text-of-your-article/)
