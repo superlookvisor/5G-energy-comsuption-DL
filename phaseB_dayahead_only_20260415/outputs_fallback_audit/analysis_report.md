@@ -107,7 +107,7 @@ ratio{prevday} + ratio{roll24} + ratio{current} + ratio{zero} \approx 1。
 这张表统计的是“**缺失导致回退发生**”的比例，和上一张表有近似一一对应关系：
 
 - `**fallback_prevday_to_roll24_*_ratio`**：`prevday` 缺失且 `roll24` 存在的比例，通常与上一表的 `*_ratio_roll24` 非常接近（因为最终用 roll24 主要就来自这一类情况）。
-- `**fallback_roll24_to_current_*_ratio**`：`prevday` 与 `roll24` 都缺失但 `current` 存在的比例，通常与上一表的 `*_ratio_current` 非常接近。
+- `**fallback_roll24_to_current_*_ratio`**：`prevday` 与 `roll24` 都缺失但 `current` 存在的比例，通常与上一表的 `*_ratio_current` 非常接近。
 
 ### 你这份结果的结论要点（更直观）
 
@@ -126,4 +126,3 @@ ratio{prevday} + ratio{roll24} + ratio{current} + ratio{zero} \approx 1。
 
 - **定位 `current` 样本**：用 `fallback_per_row.csv` 筛 `src_load_mean == "current"`（或 `src_load_pmax == "current"`），看这些样本集中在哪些 BS/日期；再决定是否在 PhaseB 训练时用 `--exclude-bs-csv` 剔除。
 - **必要时提高 BS 过滤强度**：例如提高 `--min-merged-obs-per-bs`，能提升 `roll24` 的有效性与 prevday 覆盖（代价是样本/站点变少）。
-
