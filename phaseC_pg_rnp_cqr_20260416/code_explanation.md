@@ -225,7 +225,7 @@ phaseC_pg_rnp_cqr_20260416/outputs/
 - **做什么**：在 calibration split 上，按 horizon 单独学习一个尺度化残差分位数 \(q_h\)，并生成 90% 区间（再投影到物理上下界）。
 - **输入**：`pred`（至少包含 `split/horizon/residual_true/residual_mu/residual_sigma/E_phys_hat/physical_lower/physical_upper`）
 - **核心计算**：
-  - 校准分数：\(\text{score}=\frac{|r-\mu|}{\max(\sigma,\epsilon)}\)
+  - 校准分数：$\text{score}=\frac{|r-\mu|}{\max(\sigma,\epsilon)}$
   - 每个 \(h\) 取分位数 \(q_h\)（样本为空时用默认 1.645 兜底）
   - 区间（raw）：`E_phys_hat + residual_mu ± q_h * residual_sigma`
   - 区间投影：`lower=max(lower_raw, physical_lower)`，`upper=min(upper_raw, physical_upper)`，并修正 `lower<=upper`

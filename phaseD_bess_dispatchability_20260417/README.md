@@ -1,15 +1,15 @@
-# Phase D BESS Dispatchability
+# 第 D 阶段：BESS 可调度性（Dispatchability）
 
-This phase evaluates how day-ahead base-station energy forecast uncertainty affects backup BESS reserve, dispatchable capacity, reliability risk, and simplified dispatch value.
+本阶段评估：基站日前能耗预测的不确定性，如何影响备用电池储能系统（BESS）的备用容量（reserve）、可调度容量、可靠性风险，以及简化的调度价值（dispatch value）。
 
-## Method
+## 方法
 
-The experiment reads the completed Phase C outputs:
+实验读取已完成的第 C 阶段输出：
 
 - `phaseC_pg_rnp_cqr_20260416/outputs/pg_rnp_predictions.csv`
 - `phaseC_pg_rnp_cqr_20260416/outputs/phaseb_baseline_predictions.csv`
 
-It then:
+然后执行：
 
 1. Aligns Phase B point forecasts, Phase C point forecasts, Phase C upper prediction bounds, and true hourly energy.
 2. Builds consecutive outage windows of fixed duration `T_backup`.
@@ -19,7 +19,7 @@ It then:
    Oracle, Phase B Point, Phase C Point, Phase C Aggregate-CQR, and Hourly Upper Sum.
 5. Writes window-level data, policy metrics, figures, and a dispatchability report.
 
-The default BESS scenario is synthetic because the raw project data do not contain installed battery capacities:
+由于原始项目数据不包含已安装电池容量，默认的 BESS 情景为合成设定：
 
 ```text
 C_b = 8 * p_base
@@ -29,15 +29,15 @@ T_backup = 4 hours
 epsilon = 0.10
 ```
 
-These assumptions are command-line parameters, so capacity and reliability sensitivity can be rerun without changing the code.
+上述假设均为命令行参数，因此无需改动代码即可重复运行，以分析容量与可靠性的敏感性。
 
-## Run
+## 运行
 
 ```powershell
 python phaseD_bess_dispatchability_20260417/run_phaseD_bess_dispatchability.py
 ```
 
-Useful sensitivity runs:
+常用的敏感性运行示例：
 
 ```powershell
 python phaseD_bess_dispatchability_20260417/run_phaseD_bess_dispatchability.py --backup-duration 6 --capacity-hours 10
@@ -45,9 +45,9 @@ python phaseD_bess_dispatchability_20260417/run_phaseD_bess_dispatchability.py -
 python phaseD_bess_dispatchability_20260417/run_phaseD_bess_dispatchability.py --phaseb-strategy two_stage_proxy --phaseb-model Physical
 ```
 
-## Outputs
+## 输出
 
-All outputs are written to `phaseD_bess_dispatchability_20260417/outputs/`:
+所有输出写入 `phaseD_bess_dispatchability_20260417/outputs/`：
 
 - `aligned_hourly_predictions.csv`
 - `bess_window_dataset.csv`
