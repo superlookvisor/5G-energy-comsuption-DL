@@ -16,7 +16,10 @@ $$
 目标预测时刻为 $t=t_0+h$，$h\in\mathcal{H}$。基站小时级真实能耗继承 Phase A--C 的分解结构：
 
 $$
-E_{b,t}=p^{\mathrm{base}}_b+E^{\mathrm{dyn}}_{b,t}(\ell_{b,t})+E^{\mathrm{save}}_{b,t}(\boldsymbol{s}_{b,t})+\xi_{b,t},
+E_{b,t}=
+p^{\mathrm{base}}_b+
+E^{\mathrm{dyn}}_{b,t}(\ell_{b,t})+
+E^{\mathrm{save}}_{b,t}({s}_{b,t})+\xi_{b,t}
 \tag{2}
 $$
 

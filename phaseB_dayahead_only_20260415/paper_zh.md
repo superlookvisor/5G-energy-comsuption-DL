@@ -46,10 +46,10 @@
 
 对任一基站 $b$ 及预测起点 $t_0$，需预测时刻 $t_0+h$ 的总能耗，其中 $h=1,\ldots,24$。总能耗预测被分解为
 
-$\widehat{E}_{b,t_0+h}=p^{base}_b+\widehat{y}_{b,t_0+h}$。
+$\widehat{E}_{b,t_0+h}=p^{base}*b+\widehat{y}*{b,t_0+h}$。
 
-其中，静态项 $p^{base}_b$ 取自 Phase A（配置为 `D_relaxed + quantile_10`）；
-Phase B 则聚焦于动态分量 $\widehat{y}_{b,t_0+h}$ 的预测。
+其中，静态项 $p^{base}*b$ 取自 Phase A（配置为 `D_relaxed + quantile_10`）；
+Phase B 则聚焦于动态分量 $\widehat{y}*{b,t_0+h}$ 的预测。
 可用信息被限制为不晚于预测起点的观测以及历史同小时统计摘要，从而避免在实际日前流程中不可获得的日内滞后特征与未来协变量进入模型。
 
 评价指标从两个互补角度构造：
@@ -81,18 +81,18 @@ Phase B 则聚焦于动态分量 $\widehat{y}_{b,t_0+h}$ 的预测。
 
 策略一 `two_stage_proxy` 首先构造负载与节能协变量代理：
 
-$\widehat{load}_{mean}, \quad \widehat{load}_{pmax}, 
-\quad \widehat{load}_{std}, \quad \widehat{S}_{m}$。
+$\widehat{load}*{mean}, \quad \widehat{load}*{pmax}, 
+\quad \widehat{load}*{std}, \quad \widehat{S}*{m}$。
 
 进而将其映射为物理特征：
 
-$\widehat{D}_{1}=sumpmax_b \cdot \widehat{load}_{pmax}$，
+$\widehat{D}*{1}=sumpmax_b \cdot \widehat{load}*{pmax}$，
 
-$\widehat{D}_{2}=sumpmax_b \cdot \widehat{load}_{pmax}^{2}$，
+$\widehat{D}*{2}=sumpmax_b \cdot \widehat{load}*{pmax}^{2}$，
 
-$\widehat{D}_{3}=\widehat{load}_{std}$，
+$\widehat{D}*{3}=\widehat{load}*{std}$，
 
-$\widehat{I}_{m}=\widehat{S}_{m}\cdot\widehat{load}_{pmax}$。
+$\widehat{I}*{m}=\widehat{S}*{m}\cdot\widehat{load}_{pmax}$。
 
 策略二 `historical_proxy` 直接使用历史代理项，包括：前一日同小时负载、
 滚动负载统计量及同小时节能先验等；该策略为轻量基线，物理引导变换较少。
