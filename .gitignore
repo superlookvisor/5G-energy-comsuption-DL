@@ -1,29 +1,15 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-.venv/
-.env
+### 默认忽略全部文件，只跟踪 .py / .md
+*
 
-# Large data and model files (Physical-Informed energy prediction)
-features/*.csv
-processed/*.csv
-results/**/*.csv
-models/*.pkl
-models/*.h5
-models/*.pt
-residual_data.csv
+### 允许目录被遍历（否则无法“放行”子目录里的文件）
+!*/
 
-# Visualizations
-plots/
+### 先把目录内所有内容继续忽略掉（避免目录本身出现在 git status）
+/**/*
 
-# IDE
-.idea/
-.vscode/
-.DS_Store
+### 放行需要版本控制的文件类型（包含任意子目录）
+!**/*.py
+!**/*.md
 
-# Global artifact files
-*.csv
-*.json
-*.png
-*.pdf
+### 放行自身
+!.gitignore
